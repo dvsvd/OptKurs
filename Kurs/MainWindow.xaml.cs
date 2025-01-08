@@ -22,9 +22,9 @@ namespace Kurs
             InitializeComponent();
         }
 
-        private async void CalculateButton_Click(object sender, RoutedEventArgs e)
+        private void CalculateButton_Click(object sender, RoutedEventArgs e)
         {
-            await Task.Run(() => Calculator.MainAlgoritm(
+            Task.Run(() => Calculator.MainAlgoritm(
                 UtilityFunctions.ParseString(ATextBox.Text),
                 UtilityFunctions.ParseString(BTextBox.Text),
                 double.Parse(InitialValueTextBox.Text, System.Globalization.CultureInfo.InvariantCulture),

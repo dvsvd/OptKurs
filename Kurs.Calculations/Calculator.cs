@@ -9,8 +9,11 @@ namespace Kurs.Calculations
 {
     public class Calculator
     {
+
         public static void MainAlgoritm(double[] A, double[] B,
-            double omegaStart, double omegaEnd, int numSteps)
+            double omegaStart, double omegaEnd, int numSteps,
+            double velocityErrorCoef, double amplitudeAmortText, double phaseAmortText,
+            double phaseBorderLevelText)
         {
 
         }
