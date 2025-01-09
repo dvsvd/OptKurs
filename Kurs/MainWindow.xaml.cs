@@ -24,13 +24,10 @@ namespace Kurs
 
         private void CalculateButton_Click(object sender, RoutedEventArgs e)
         {
-            Task.Run(() => Calculator.MainAlgoritm(
-                UtilityFunctions.ParseString(ATextBox.Text),
-                UtilityFunctions.ParseString(BTextBox.Text),
-                double.Parse(InitialValueTextBox.Text, System.Globalization.CultureInfo.InvariantCulture),
-                double.Parse(EndValueTextBox.Text, System.Globalization.CultureInfo.InvariantCulture),
-                int.Parse(NumStepsTextBox.Text, System.Globalization.CultureInfo.InvariantCulture),
-                ));
+            inVM.ExecuteMainAlgorithmAsync(ATextBox.Text, BTextBox.Text,
+                InitialValueTextBox.Text, EndValueTextBox.Text, NumStepsTextBox.Text,
+                VelocityErrorCoefTextBox.Text, AmplitudeAmortTextBox.Text, PhaseAmortTextBox.Text,
+                PhaseBorderLevelTextBox.Text);
         }
     }
 }
