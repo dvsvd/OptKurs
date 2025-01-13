@@ -9,6 +9,7 @@ using MathNet.Numerics;
 
 namespace Kurs.Calculations
 {
+    using MathNet.Numerics.Distributions;
     using System;
     using System.Numerics;
     using System.Reflection;
@@ -115,8 +116,8 @@ namespace Kurs.Calculations
     }
     public class Calculator (double[] A, double[] B,
             double omegaStart, double omegaEnd, int numSteps,
-            double velocityErrorCoef, double amplitudeAmortText, double phaseAmortText,
-            double phaseBorderLevelText)
+            double velocityErrorCoef, double amplitudeAmort, double phaseAmort,
+            double phaseBorderLevel)
     {
         public event EventHandler Draw1Event;
         public event EventHandler Draw2Event;
@@ -233,6 +234,8 @@ namespace Kurs.Calculations
             double T_top = (3 / P.Eta) * 10;              // Верхняя оценка времени
             return TransientPeriod(h, W0, Winf, T_top);
         }
+        private static double phi(double omega) => new Complex(0.0, omega).Phase;
+        private static double Amp(double omega) => new Complex(0.0, omega).Magnitude;
 
         // Расчет времени установления
         private static double TransientPeriod(Func<double, double> h, double W0, double Winf, double T_top)
@@ -283,8 +286,6 @@ namespace Kurs.Calculations
             Q = WResult.Select(wi => wi.Imaginary).ToArray();
             Ampl = WResult.Select(wi => wi.Magnitude).ToArray();
             Phase = CorPhi(WResult.Select(wi => wi.Phase).ToArray());
-            Complex K = WInit.W(0),
-                Ki = 1.0 / (K * velocityErrorCoef);
             L = Ampl.Select(Ai => 20 * Math.Log10(Ai)).ToArray();
             double h(double t) => LaplaceInversion.LaplaceInvert((s) => WInit.W(s) / s, t);
             double w(double t) => LaplaceInversion.LaplaceInvert((s) => WInit.W(s), t);
@@ -305,14 +306,96 @@ namespace Kurs.Calculations
             {
                 Sigma = Overshoot(h, WInit.W(0).Real, A);
             }
-            catch(UnstablePolynomialException)
+            catch (UnstablePolynomialException)
             {
                 Sigma = double.NaN;
             }
             // Step 2. Plots
             Draw1Event?.Invoke(this, EventArgs.Empty);
             // Step 3. Controller parameters
-            
+            double K = WInit.W(0).Real,
+                Ki = 1.0 / (K * velocityErrorCoef);
+            double L_z = amplitudeAmort,
+                phi_z = phaseAmort,
+                phi_border = phaseBorderLevel,
+                lambda_z = Math.Pow(10, 0.05 * L_z);
+            double Kp(double omega_z) => Math.Cos(phi_border + phi_z - phi(omega_z)) / (lambda_z * Amp(omega_z));
+            double Kd(double omega_z) => ((Math.Sin(phi_border + phi_z - phi(omega_z)) / (lambda_z * Amp(omega_z))) + Ki / omega_z) / omega_z;
+            Complex R(Complex s, double omega_z) => (Ki + Kp(omega_z) * s + Kd(omega_z) * s * s) / s;
+            // Разомкнутая
+            Complex Wdisc(Complex s, double omega_z) => WInit.W(s) * R(s, omega_z);
+            // Замкнутая
+            var Wcon = (Complex s, double omega_z) => Wdisc(s, omega_z) / (1.0 + Wdisc(s, omega_z));
+            double h_endless(double t, double omega_z) => LaplaceInversion.LaplaceInvert((s) => Wcon(s, omega_z) / s, t);
+            ComplexPolynomial CA = A;
+            ComplexPolynomial CB = B;
+            //Конечная функция с параметрами регулятора
+            Complex finite_func(Complex s, double Ki, Func<double, double> Kp, Func<double, double> Kd, double omega_z)
+            {
+                Polynomial PB = CB;
+                Polynomial PA = CA;
+                Polynomial intern = new([Ki, Kp(omega_z), Kd(omega_z)]);
+                var PBf = (Complex s) => PB.Evaluate(s);
+                var PAf = (Complex s) => s * PA.Evaluate(s);
+                return PBf(s) * intern.Evaluate(s) + PAf(s);
+            }
+            //Подсчет корней конечной функции
+            Complex[] CalculateRootsArrayFin(double Ki, Func<double, double> Kp, Func<double, double> Kd, double omega_z)
+            {
+                Polynomial PB = CB;
+                Polynomial PA = CA;
+                Polynomial intern = new([Ki, Kp(omega_z), Kd(omega_z)]);
+                //Умножаем PA на s
+                Polynomial PT = new(PA.Degree + 1);
+                for (int i = PT.Coefficients.Length - 1; i > 0; i--)
+                {
+                    PT.Coefficients[i] = PA.Coefficients[i - 1];
+                }
+                PT.Coefficients[0] = 0.0;
+                PA = PT;
+                var poly = PB * intern + PA;
+                return poly.Roots();
+            }
+            // Максимальное и минимальное время установления конечной функции
+            (double, double) SettingTimeFiniteSystem(double Ki, Func<double, double> Kp, Func<double, double> Kd, double omega_z)
+            {
+                var numerical_roots = CalculateRootsArrayFin(Ki, Kp, Kd, omega_z);
+                var real_parts = numerical_roots.Select(i => i.Real).ToArray();
+                var eta = -real_parts.Max();
+                var gamma = -real_parts.Min();
+                if (eta <= 0)
+                    return (double.PositiveInfinity, double.PositiveInfinity);
+                else
+                    return (3 / eta, 3 / gamma);
+            }
+
+            // Перерегулирование конечной функции
+            double OverregulationFiniteSystem(double Ki, Func<double, double> Kp, Func<double, double> Kd, double omega_z)
+            {
+                var numerical_roots = CalculateRootsArrayFin(Ki, Kp, Kd, omega_z);
+                var real_parts = numerical_roots.Select(i => i.Real).ToArray();
+                var eta = -real_parts.Max();
+                if (eta <= 0)
+                    return double.PositiveInfinity;
+                var imag_parts = numerical_roots.Select(i => i.Imaginary).ToArray();
+                var ratio = numerical_roots.Select(i => i.Imaginary / i.Real);
+                var result = ratio.Select(Math.Abs);
+                var mu = result.Max();
+                return Math.Exp(-Math.PI / mu);
+            }
+            // Подсчет оценок времени и коэффициента перерегулирования для каждой омеги
+            List<double> upper_setting_times = [];
+            List<double> lower_setting_times = [];
+            List<double> overregulation_values = [];
+            foreach(double o in Omegas)
+            {
+                double max_time, min_time;
+                (max_time, min_time) = SettingTimeFiniteSystem(Ki, Kp, Kd, o);
+                upper_setting_times.Add(max_time);
+                lower_setting_times.Add(min_time);
+                var overreg = OverregulationFiniteSystem(Ki, Kp, Kd, o);
+                overregulation_values.Add(overreg);
+            }
             Debug.Print("Main Algorithm end");
         }
         public class PolynomialPair<T>(T[] result, T[]? remainder = null)

@@ -6,7 +6,6 @@ using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using static Kurs.Calculations.Calculator;
-using static Kurs.Calculations.ComplexPolynomial;
 
 namespace Kurs.Calculations
 {
@@ -23,6 +22,10 @@ namespace Kurs.Calculations
             AperiodicBorderStable,
             OscillatingBorderStable,
             Stable
+        }
+        public ComplexPolynomial(Func<Complex, Complex> f)
+        {
+
         }
         public double[] C { get; private set; } = coefficients;
         public int Length { get { return C.Length; } }
