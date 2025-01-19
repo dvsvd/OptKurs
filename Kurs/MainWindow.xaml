@@ -5,11 +5,15 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Kurs"
         xmlns:oxy="http://oxyplot.org/wpf" x:Class="Kurs.MainWindow"
+        xmlns:controls="clr-namespace:WpfMath.Controls;assembly=WpfMath"
         mc:Ignorable="d"
         Title="MainWindow" Height="423" Width="1153">
     <Window.DataContext>
         <local:MainVM x:Name="mainVM"/>
     </Window.DataContext>
+    <Window.Resources>
+        <local:DoubleRoundConverter x:Key="Rounder" />
+    </Window.Resources>
     <TabControl x:Name="MainTab" >
         <TabItem Header="Исходные данные">
             <ScrollViewer>
@@ -239,6 +243,217 @@
                                             FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
                                             TextTrimming="CharacterEllipsis" Margin="15,10,0,10" HorizontalAlignment="Left">
                             <Run Text="Перерегулирование σ = "/><Run Text="{Binding Sigma, Mode=OneWay}"/>
+                        </TextBlock>
+                    </Grid>
+                </Grid>
+            </ScrollViewer>
+        </TabItem>
+        <TabItem Header="Регулятор">
+            <ScrollViewer>
+                <Grid ShowGridLines="True" ScrollViewer.CanContentScroll="True">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Grid Grid.Row="0" Grid.ColumnSpan="2" ShowGridLines="True" ScrollViewer.CanContentScroll="True">
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" TextWrapping="Wrap"
+                                        FontFamily="Times New Roman" FontSize="24" FontWeight="Normal"
+                                        TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Center"><Run Text="Система с регулятором"/>
+                        </TextBlock>
+                        <TextBlock Grid.Row="1" TextWrapping="Wrap"
+                                            FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                            TextTrimming="CharacterEllipsis" Margin="15,10,0,10" HorizontalAlignment="Left">
+                            <Run Text="Коэффициент усиления интегрального канала регулятора Kи = "/><Run Text="{Binding Ki, Mode=OneWay}"/>
+                        </TextBlock>
+                    </Grid>
+                    <oxy:PlotView Grid.Row="1" Grid.Column="0" Model="{Binding KpModel, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" ZoomVerticalCursor="SizeNS" ZoomRectangleCursor="SizeNWSE" ZoomHorizontalCursor="SizeWE" PanCursor="Hand">
+                    </oxy:PlotView>
+                    <oxy:PlotView Grid.Row="2" Grid.Column="0" Model="{Binding TSetModel, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" ZoomVerticalCursor="SizeNS" ZoomRectangleCursor="SizeNWSE" ZoomHorizontalCursor="SizeWE" PanCursor="Hand">
+                    </oxy:PlotView>
+                    <oxy:PlotView Grid.Row="1" Grid.Column="1" Model="{Binding KdModel, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" ZoomVerticalCursor="SizeNS" ZoomRectangleCursor="SizeNWSE" ZoomHorizontalCursor="SizeWE" PanCursor="Hand">
+                    </oxy:PlotView>
+                    <oxy:PlotView Grid.Row="2" Grid.Column="1" Model="{Binding OsModel, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" ZoomVerticalCursor="SizeNS" ZoomRectangleCursor="SizeNWSE" ZoomHorizontalCursor="SizeWE" PanCursor="Hand">
+                    </oxy:PlotView>
+                </Grid>
+            </ScrollViewer>
+        </TabItem>
+        <TabItem Header="Коэффициенты по времени">
+            <ScrollViewer>
+                <Grid ShowGridLines="True" ScrollViewer.CanContentScroll="True">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" TextWrapping="Wrap"
+                                    FontFamily="Times New Roman" FontSize="24" FontWeight="Normal"
+                                    TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Center">
+                        <Run Text="Расчёт коэффициентов регулятора по критерию минимальной оценки времени установления"/>
+                    </TextBlock>
+                    <TextBlock Grid.Row="1" TextWrapping="Wrap"
+                                    FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                    TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Left">
+                            <Run Text="Минимальное значение максимальной оценки времени установления = "/>
+                            <Run Text="{Binding TMinEval, Mode=OneWay}"/>
+                            <LineBreak/>
+                            <Run Text="Частота запаса, при которой достигается данное значение времени = "/>
+                            <Run Text="{Binding OmegaMinEval, Mode=OneWay}"/>
+                    </TextBlock>
+                    <Grid Grid.Row="2" ShowGridLines="True">
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Row="0" TextWrapping="Wrap"
+                                    FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                    TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Left">
+                            <Run Text="Полученные коэффициенты регулятора"/>
+                        </TextBlock>
+                        <TextBlock Grid.Row="1" Grid.Column="0" TextWrapping="Wrap"
+                                    FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                    TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Left">
+                            <Run Text="Кп = "/><Run Text="{Binding KpToPrint, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock Grid.Row="1" Grid.Column="1" TextWrapping="Wrap"
+                                    FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                    TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Left">
+                            <Run Text="Кд = "/><Run Text="{Binding KdToPrint, Mode=OneWay}"/>
+                        </TextBlock>
+                    </Grid>
+                    <TextBlock Grid.Row="3" Grid.Column="1" TextWrapping="Wrap"
+                                    FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                    TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <Run Text="Передаточная функция регулятора R(s) = " BaselineAlignment="Center"/>
+                        <controls:FormulaControl Formula="{Binding RFormula}"/>
+                    </TextBlock>
+                    <TextBlock Grid.Row="4" Grid.Column="1" TextWrapping="Wrap"
+                                    FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                    TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <Run Text="Передаточная функция замкнутой системы с регулятором Wз(s) = " BaselineAlignment="Center"/>
+                            <controls:FormulaControl Formula="{Binding WZFormula}"/>
+                    </TextBlock>
+                    <oxy:PlotView Grid.Row="5" Model="{Binding ht2Model, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" ZoomVerticalCursor="SizeNS" ZoomRectangleCursor="SizeNWSE" ZoomHorizontalCursor="SizeWE" PanCursor="Hand">
+                    </oxy:PlotView>
+                    <TextBlock Grid.Row="6" Grid.Column="0"  TextWrapping="Wrap"
+                                            FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                            TextTrimming="CharacterEllipsis" Margin="15,10,0,10" HorizontalAlignment="Left">
+
+                    </TextBlock>
+                    <TextBlock Grid.Row="6" Grid.Column="1"  TextWrapping="Wrap"
+                                            FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                            TextTrimming="CharacterEllipsis" Margin="15,10,0,10" HorizontalAlignment="Left">
+                        <Run Text="Время установления tу = "/><Run Text="{Binding TSettingEndNon3, Mode=OneWay, Converter={StaticResource Rounder}}"/>
+                        <LineBreak/>
+                        <Run Text="Перерегулирование σ = "/><Run Text="{Binding SigmaEnd, Mode=OneWay, Converter={StaticResource Rounder}}"/>
+                    </TextBlock>
+                </Grid>
+            </ScrollViewer>
+        </TabItem>
+        <TabItem Header="Коэффициенты по регулированию">
+            <ScrollViewer>
+                <Grid ShowGridLines="True" ScrollViewer.CanContentScroll="True">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" TextWrapping="Wrap"
+                                    FontFamily="Times New Roman" FontSize="24" FontWeight="Normal"
+                                    TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Center">
+                        <Run Text="Расчёт коэффициентов регулятора по критерию минимальной оценки перерегулирования"/>
+                    </TextBlock>
+                    <TextBlock Grid.Row="1" TextWrapping="Wrap"
+                                    FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                    TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Left">
+                            <Run Text="Частота запаса, при которой достигается минимальное значение оценки перерегулирования = "/>
+                            <Run Text="{Binding OmegaMinOvershoot, Mode=OneWay}"/>
+                    </TextBlock>
+                    <Grid Grid.Row="2" ShowGridLines="True">
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Row="0" TextWrapping="Wrap"
+                                    FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                    TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Left">
+                            <Run Text="Полученные коэффициенты регулятора"/>
+                        </TextBlock>
+                        <TextBlock Grid.Row="1" Grid.Column="0" TextWrapping="Wrap"
+                                    FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                    TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Left">
+                            <Run Text="Кп = "/><Run Text="{Binding KpToPrint2, Mode=OneWay}"/>
+                        </TextBlock>
+                        <TextBlock Grid.Row="1" Grid.Column="1" TextWrapping="Wrap"
+                                    FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                    TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Left">
+                            <Run Text="Кд = "/><Run Text="{Binding KdToPrint2, Mode=OneWay}"/>
+                        </TextBlock>
+                    </Grid>
+                    <TextBlock Grid.Row="3" TextWrapping="Wrap"
+                                    FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                    TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <Run Text="Передаточная функция регулятора R(s) = " BaselineAlignment="Center"/>
+                        <controls:FormulaControl Formula="{Binding RFormula2}"/>
+                    </TextBlock>
+                    <TextBlock Grid.Row="4" TextWrapping="Wrap"
+                                    FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                    TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <Run Text="Передаточная функция замкнутой системы с регулятором Wз(s) = " BaselineAlignment="Center"/>
+                            <controls:FormulaControl Formula="{Binding WZFormula2}"/>
+                    </TextBlock>
+                    <oxy:PlotView Grid.Row="5" Model="{Binding ht3Model, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}" ZoomVerticalCursor="SizeNS" ZoomRectangleCursor="SizeNWSE" ZoomHorizontalCursor="SizeWE" PanCursor="Hand">
+                    </oxy:PlotView>
+                    <TextBlock Grid.Row="6" TextWrapping="Wrap"
+                                            FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                            TextTrimming="CharacterEllipsis" Margin="15,10,0,10" HorizontalAlignment="Left">
+
+                    </TextBlock>
+                    <Grid Grid.Row="6" ShowGridLines="True">
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" TextWrapping="Wrap"
+                                            FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                            TextTrimming="CharacterEllipsis" Margin="15,10,0,10" HorizontalAlignment="Left">
+                        <Run Text="Время установления tу = "/><Run Text="{Binding TSetOvershoot, Mode=OneWay, Converter={StaticResource Rounder}}"/>
+                        <LineBreak/>
+                        <Run Text="Перерегулирование σ = "/><Run Text="{Binding SigmaOfMinOvershoot, Mode=OneWay, Converter={StaticResource Rounder}}"/>
+                        </TextBlock>
+                        <TextBlock  Grid.Column="1" TextWrapping="Wrap"
+                                    FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
+                                    TextTrimming="CharacterEllipsis" Margin="0,10,0,10" HorizontalAlignment="Left">
+                            <Run Text="{Binding TimeText, Mode=OneWay}"/>
+                            <LineBreak/>
+                            <Run Text="Объём занимаемой памяти: "/><Run Text="{Binding Memory, Mode=OneWay}"/><Run Text=" МБ"/>
                         </TextBlock>
                     </Grid>
                 </Grid>

@@ -13,7 +13,7 @@ namespace Kurs.Calculations
     /// Класс, представляющий многочлен комплексного аргумента
     /// </summary>
     /// <param name="coefficients">Массив коэффициентов, где младший индекс - коэф. старшей степени</param>
-    public class ComplexPolynomial(double[] coefficients)
+    public class ComplexPolynomial(IEnumerable<double> coefficients)
     {
         public enum PolynomialStability
         {
@@ -23,11 +23,7 @@ namespace Kurs.Calculations
             OscillatingBorderStable,
             Stable
         }
-        public ComplexPolynomial(Func<Complex, Complex> f)
-        {
-
-        }
-        public double[] C { get; private set; } = coefficients;
+        public double[] C { get; private set; } = coefficients.ToArray();
         public int Length { get { return C.Length; } }
         /// <summary>
         /// Эта
@@ -102,6 +98,7 @@ namespace Kurs.Calculations
         
         public static implicit operator ComplexPolynomial(double[] coefficients) => new(coefficients);
         public static explicit operator double[](ComplexPolynomial obj) => obj.C;
-        public static implicit operator MathNet.Numerics.Polynomial(ComplexPolynomial obj) => new(obj.C.Reverse());
+        public static implicit operator Polynomial(ComplexPolynomial obj) => new(obj.C.Reverse());
+        public static explicit operator ComplexPolynomial(Polynomial obj) => obj.Coefficients.Reverse().ToArray();
     }
 }

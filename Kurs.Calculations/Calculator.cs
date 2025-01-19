@@ -9,13 +9,6 @@ using MathNet.Numerics;
 
 namespace Kurs.Calculations
 {
-    using MathNet.Numerics.Distributions;
-    using System;
-    using System.Numerics;
-    using System.Reflection;
-    using System.Runtime.InteropServices;
-    using static System.Runtime.InteropServices.JavaScript.JSType;
-
     public class LaplaceInversion
     {
         private const double PI = 3.141592653589793238462643; // pi
@@ -119,24 +112,68 @@ namespace Kurs.Calculations
             double velocityErrorCoef, double amplitudeAmort, double phaseAmort,
             double phaseBorderLevel)
     {
-        public event EventHandler Draw1Event;
-        public event EventHandler Draw2Event;
-        public TransFunction WInit { get; private set; }
-        public double[] Omegas { get; private set; }
-        public double[] P { get; private set; }
-        public double[] Q { get; private set; }
-        public double[] Ampl { get; private set; }
-        public double[] Phase { get; private set; }
-        public double[] L { get; private set; }
-        public double[] ts { get; private set; }
-        public double[] h_t { get; private set; }
-        public double[] w_t { get; private set; }
+        public event EventHandler? Draw1Event;
+        public event EventHandler? Draw2Event;
+        public TransFunction? WInit { get; private set; }
+        public double[]? Omegas { get; private set; }
+        public double[]? P { get; private set; }
+        public double[]? Q { get; private set; }
+        public double[]? Ampl { get; private set; }
+        public double[]? Phase { get; private set; }
+        public double[]? L { get; private set; }
+        public double[]? ts { get; private set; }
+        public double[]? h_t { get; private set; }
+        public double[]? w_t { get; private set; }
         public double t_u { get; private set; }
+        public double Ki { get; private set; }
         public double Tset { get; private set; }
         public double T3set { get; private set; }
         //public double Ttop  { get; private set; }
+        public double[]? Kps  { get; private set; }
+        public double[]? Kds  { get; private set; }
+        public double[]? USTs { get; private set; }
+        public double[]? LSTs { get; private set; }
+        public double[]? OSs { get; private set; }
         public double Sigma  { get; private set; }
-        // Function to compute CorPhi
+        public double TMinEval  { get; private set; }
+        public double OmegaMinEval  { get; private set; }
+        public double KpToPrint  { get; private set; }
+        public double KdToPrint  { get; private set; }
+        public double KpToPrint2 { get; private set; }
+        public double KdToPrint2 { get; private set; }
+        public double SigmaEnd { get; private set; }
+        public double TSettingEndNon3 { get; private set; }
+        public double OmegaMinOvershoot { get; private set; }
+        public double TSetOvershoot { get; private set; }
+        public double SigmaOfMinOvershoot { get; private set; }
+        public double[]? TEndRange { get; private set; }
+        public double[]? TEndRange2 { get; private set; }
+        public double[]? h_endless_vals { get; private set; }
+        public double[]? h_endless_omega_min_vals { get; private set; }
+        public int StartTime { get; private set; } = 0;
+        public int EndTime { get; private set; } = -1;
+
+        // Функция для вычисления предела
+        public static Complex CalculateLimit(Func<Complex, Complex> F, Complex approachingPoint,
+            double delta = 1e-5, int maxIterations = 1000)
+        {
+            Complex sum = Complex.Zero;
+            int count = 0;
+
+            for (double r = delta; r > 0; r /= 2) // Уменьшаем радиус приближения
+            {
+                for (int i = 0; i < 8; i++) // Дискретизация по углам
+                {
+                    double angle = i * Math.PI / 4; // 8 точек по круту
+                    Complex z = approachingPoint + r * Complex.FromPolarCoordinates(1, angle);
+                    sum += F(z);
+                    count++;
+                }
+            }
+
+            return sum / count; // Возвращаем среднее значение
+        }
+            // Function to compute CorPhi
         internal static double[] CorPhi(double[] phi)
         {
             // Normalize the angles in phi
@@ -264,7 +301,7 @@ namespace Kurs.Calculations
         }
         public void MainAlgorithm()
         {
-            Debug.Print("Main Algorithm start");
+            StartTime = Environment.TickCount;
             // Step 1. Values
             WInit = new TransFunction(A, B); // W(s)
             if (omegaEnd < omegaStart)
@@ -313,7 +350,7 @@ namespace Kurs.Calculations
             // Step 2. Plots
             Draw1Event?.Invoke(this, EventArgs.Empty);
             // Step 3. Controller parameters
-            double K = WInit.W(0).Real,
+            double K = WInit.W(0).Real;
                 Ki = 1.0 / (K * velocityErrorCoef);
             double L_z = amplitudeAmort,
                 phi_z = phaseAmort,
@@ -329,16 +366,6 @@ namespace Kurs.Calculations
             double h_endless(double t, double omega_z) => LaplaceInversion.LaplaceInvert((s) => Wcon(s, omega_z) / s, t);
             ComplexPolynomial CA = A;
             ComplexPolynomial CB = B;
-            //Конечная функция с параметрами регулятора
-            Complex finite_func(Complex s, double Ki, Func<double, double> Kp, Func<double, double> Kd, double omega_z)
-            {
-                Polynomial PB = CB;
-                Polynomial PA = CA;
-                Polynomial intern = new([Ki, Kp(omega_z), Kd(omega_z)]);
-                var PBf = (Complex s) => PB.Evaluate(s);
-                var PAf = (Complex s) => s * PA.Evaluate(s);
-                return PBf(s) * intern.Evaluate(s) + PAf(s);
-            }
             //Подсчет корней конечной функции
             Complex[] CalculateRootsArrayFin(double Ki, Func<double, double> Kp, Func<double, double> Kd, double omega_z)
             {
@@ -386,7 +413,7 @@ namespace Kurs.Calculations
             // Подсчет оценок времени и коэффициента перерегулирования для каждой омеги
             List<double> upper_setting_times = [];
             List<double> lower_setting_times = [];
-            List<double> overregulation_values = [];
+            List<double> overshoot_values = [];
             foreach(double o in Omegas)
             {
                 double max_time, min_time;
@@ -394,72 +421,48 @@ namespace Kurs.Calculations
                 upper_setting_times.Add(max_time);
                 lower_setting_times.Add(min_time);
                 var overreg = OverregulationFiniteSystem(Ki, Kp, Kd, o);
-                overregulation_values.Add(overreg);
+                overshoot_values.Add(overreg);
             }
-            Debug.Print("Main Algorithm end");
-        }
-        public class PolynomialPair<T>(T[] result, T[]? remainder = null)
-        {
-            public T[] Result = result;
-            public T[]? Remainder = remainder;
-        }
-        /// <summary>
-        /// Метод деления многочлена на многочлен.
-        /// Алгоритм полагает, что порядок элемента - это его индекс
-        /// </summary>
-        /// <typeparam name="T">Тип элемента</typeparam>
-        /// <param name="u">Делимое</param>
-        /// <param name="v">Делитель</param>
-        /// <returns>Пара многочлена-результата и многочлена-остатка</returns>
-        /// <exception cref="ArgumentException"></exception>
-        public static PolynomialPair<T> PolynomialDivision<T>(T[] u, T[] v) where T : INumber<T>
-        {
-            T[] q = new T[u.Length], r = new T[u.Length];
-            int k, j, n = u.Length -1, nv = v.Length - 1;
-            while(nv >= 0 && v[nv] == T.Zero)
-            if (nv < 0)
-                throw new ArgumentException("Деление на нулевой многочлен");
-            Array.Copy(u, r, u.Length);
-            for (k = n - nv; k >= 0; k--)
-            {
-                q[k] = r[nv + k] / v[nv];
-                for (j = nv + k - 1; j >= k; j--)
-                    r[j] -= q[k] * v[j - k];
-            }
-            for (j = nv; j <= n; j++)
-                r[j] = T.Zero;
-            return new PolynomialPair<T>(u, r);
-        }
-        /// <summary>
-        /// Метод деления многочлена на многочлен.
-        /// Алгоритм полагает, что порядок элемента - это его индекс
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="numerator">Делимое</param>
-        /// <param name="denominator">Делитель</param>
-        /// <returns>Пара многочлена-результата и многочлена-остатка</returns>
-        /// <exception cref="ArgumentException">Генерируется, если степень делимого больше степени делителя</exception>
-        public static PolynomialPair<T> MyPolynomialDivision<T>(T[] numerator, T[] denominator) where T : INumber<T>
-        {
-            List<T> ret = [];
-            List<T> rem = [];
-            List<T> subt = [];
-            if (numerator.Length < denominator.Length)
-                throw new ArgumentException("Numerator's degree must be greater than or equal to denominator's degree");
-            //Полагаем разность в порядках как разность в длинах
-            int diff = numerator.Length - denominator.Length;
-            for(int i = numerator.Length - 1; i > 0; i--)
-            {
-                T res = numerator[i] / denominator[i - diff];
-                for(int j = 0; j < denominator.Length; j++)
-                {
-                    subt.Add(denominator[j] * res);
-                }
-
-                ret.Add(res);
-                subt.Clear();
-            }
-            return new PolynomialPair<T>([..ret], [..rem]);
+            Kps = Omegas.Select(Kp).ToArray();
+            Kds = Omegas.Select(Kd).ToArray();
+            USTs = [.. upper_setting_times];
+            LSTs = [.. lower_setting_times];
+            OSs = [.. overshoot_values];
+            // Step 4. Calc Assess 1
+            var idx = Array.IndexOf(USTs, USTs.Where(e => e > 0).Min());
+            var min_of_upper_index = Array.IndexOf(USTs, USTs.Min());
+            TMinEval = USTs[idx];
+            OmegaMinEval = Omegas[idx];
+            double h_endless_n(double t) => h_endless(t, Omegas[idx]);
+            Complex limit_func_lambda (Complex omega) => Wcon(omega, Omegas[idx]);
+            var limit = CalculateLimit(limit_func_lambda, omega);
+            var limitr = limit.Real;
+            SigmaEnd = Overshoot(h_endless_n, limitr, CA);
+            TSettingEndNon3 = TransientPeriod((double t) => h_endless(t, Omegas[min_of_upper_index]), limitr, h_endless_n(0), 1000);
+            var T_setting_end = TSettingEndNon3 * 3;
+            TEndRange = DoubleRange(0, T_setting_end, T_setting_end / 50.0).ToArray();
+            h_endless_vals = TEndRange.Select(h_endless_n).ToArray();
+            KdToPrint = Math.Round(Kd(Omegas[idx]), 3);
+            KpToPrint = Math.Round(Kp(Omegas[idx]), 3);
+            // Step 5. Calc Assess 2
+            var min_overshoot_index = overshoot_values.IndexOf(overshoot_values.Min());
+            OmegaMinOvershoot = Omegas[min_overshoot_index];
+            var limit_value = CalculateLimit((Complex x) => Wcon(x, Omegas[idx]), 0);
+            var limit_valued = limit_value.Real;
+            Func<Complex, Complex> limit_func_lambda1 (double omega) => (Complex s) => Wcon(new Complex(0.0, omega), OmegaMinOvershoot);
+            limit = CalculateLimit(limit_func_lambda1(omega), 0);
+            limitr = limit.Real;
+            var h_endless_omega_min_overshoot = (double t) => h_endless(t, OmegaMinOvershoot);
+            TSetOvershoot = TransientPeriod(h_endless_omega_min_overshoot, limitr, h_endless_n(0), 1000);
+            T_setting_end = TSetOvershoot * 3;
+            TEndRange2 = DoubleRange(0, T_setting_end, 1.0 / 50.0).ToArray();
+            h_endless_omega_min_vals = TEndRange2.Select(h_endless_omega_min_overshoot).ToArray();
+            SigmaOfMinOvershoot = Overshoot(h_endless_omega_min_overshoot, limit_valued, A);
+            KdToPrint2 = Math.Round(Kd(OmegaMinOvershoot), 3);
+            KpToPrint2 = Math.Round(Kp(OmegaMinOvershoot), 3);
+            EndTime = Environment.TickCount;
+            // Step 6. Draw Controller
+            Draw2Event?.Invoke(this, EventArgs.Empty);
         }
     }
 }
