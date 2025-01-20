@@ -267,7 +267,7 @@ namespace Kurs.Calculations
             if (P.Stability != ComplexPolynomial.PolynomialStability.Stable)
                 throw new UnstablePolynomialException("Неустойчивый многочлен в рассчёте установки времени");
 
-            double T_top = (3 / P.Eta) * 10;              // Верхняя оценка времени
+            double T_top = (3 / Math.Abs(P.Eta)) * 10;              // Верхняя оценка времени
             return TransientPeriod(h, W0, Winf, T_top);
         }
         private static double phi(double omega) => new Complex(0.0, omega).Phase;

@@ -47,7 +47,7 @@
                             <Label Grid.Row="0" FontFamily="Times New Roman" FontStyle="Italic" FontSize="14" Content="B(s)"/>
                             <TextBox x:Name="BTextBox" Grid.Row="1"
                                                 FontFamily="Times New Roman"
-                                                Margin="5,4,10,0" Height="18" VerticalAlignment="Top" Text="200"/>
+                                                Margin="5,4,10,0" Height="18" VerticalAlignment="Top" Text="20 14"/>
                         </Grid>
                         <Grid Grid.Row="2">
                             <Grid.RowDefinitions>
@@ -57,7 +57,7 @@
                             <Label Grid.Row="0" FontFamily="Times New Roman" FontStyle="Italic" FontSize="14" Content="A(s)"/>
                             <TextBox x:Name="ATextBox" Grid.Row="1"
                                                 FontFamily="Times New Roman"
-                                                Margin="5,4,10,0" Height="18" VerticalAlignment="Top" Text="1 61 560 500"/>
+                                                Margin="5,4,10,0" Height="18" VerticalAlignment="Top" Text="18 61 56 1000"/>
                         </Grid>
                     </Grid>
                     <Grid Grid.Column="1" Grid.Row="0" Margin="0,0,0,8">
