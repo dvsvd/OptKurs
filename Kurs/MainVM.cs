@@ -229,6 +229,9 @@ namespace Kurs
             ht3Model.Series.Add(CreateLine(calc.TEndRange2, calc.h_endless_omega_min_vals, 2.0, OxyColor.FromRgb(0xD1, 0x0, 0x0)));
             OnPropertyChanged(nameof(ht3Model));
 
+            OnPropertyChanged(nameof(TMinEval));
+            OnPropertyChanged(nameof(OmegaMinEval));
+            OnPropertyChanged(nameof(OmegaMinOvershoot));
             OnPropertyChanged(nameof(RFormula));
             OnPropertyChanged(nameof(WZFormula));
             OnPropertyChanged(nameof(KdToPrint));

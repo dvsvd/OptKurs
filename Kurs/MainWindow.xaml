@@ -359,7 +359,7 @@
                     <TextBlock Grid.Row="6" Grid.Column="1"  TextWrapping="Wrap"
                                             FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
                                             TextTrimming="CharacterEllipsis" Margin="15,10,0,10" HorizontalAlignment="Left">
-                        <Run Text="Время установления tу = "/><Run Text="{Binding TSettingEndNon3, Mode=OneWay, Converter={StaticResource Rounder}}"/>
+                        <Run Text="Время установления tу = "/><Run Text="{Binding TSettingEndNon3, Mode=OneWay, Converter={StaticResource Rounder}}"/><Run Text=" c"/>
                         <LineBreak/>
                         <Run Text="Перерегулирование σ = "/><Run Text="{Binding SigmaEnd, Mode=OneWay, Converter={StaticResource Rounder}}"/>
                     </TextBlock>
@@ -444,7 +444,7 @@
                         <TextBlock Grid.Column="0" TextWrapping="Wrap"
                                             FontFamily="Times New Roman" FontSize="16" FontWeight="Normal"
                                             TextTrimming="CharacterEllipsis" Margin="15,10,0,10" HorizontalAlignment="Left">
-                        <Run Text="Время установления tу = "/><Run Text="{Binding TSetOvershoot, Mode=OneWay, Converter={StaticResource Rounder}}"/>
+                        <Run Text="Время установления tу = "/><Run Text="{Binding TSetOvershoot, Mode=OneWay, Converter={StaticResource Rounder}}"/><Run Text=" c"/>
                         <LineBreak/>
                         <Run Text="Перерегулирование σ = "/><Run Text="{Binding SigmaOfMinOvershoot, Mode=OneWay, Converter={StaticResource Rounder}}"/>
                         </TextBlock>

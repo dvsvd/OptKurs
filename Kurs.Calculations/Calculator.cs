@@ -128,7 +128,6 @@ namespace Kurs.Calculations
         public double Ki { get; private set; }
         public double Tset { get; private set; }
         public double T3set { get; private set; }
-        //public double Ttop  { get; private set; }
         public double[]? Kps  { get; private set; }
         public double[]? Kds  { get; private set; }
         public double[]? USTs { get; private set; }
